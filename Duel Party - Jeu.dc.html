@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="./styles.css">
+<style>
+body{margin:0;background:var(--color-bg)}
+@keyframes dp-pulse{0%{transform:scale(1)}50%{transform:scale(1.06)}100%{transform:scale(1)}}
+.dp-app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+.dp-avatar{width:44px;height:44px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;font-weight:500;flex:none}
+.dp-plrow{display:flex;align-items:center;gap:12px;padding:10px 12px;background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
+.dp-tapbtn{width:220px;height:220px;border-radius:50%;border:2px solid var(--color-accent);background:radial-gradient(circle, var(--color-accent-900), var(--color-bg) 75%);color:var(--color-text);font-family:'Inter',sans-serif;font-size:20px;font-weight:500;cursor:pointer;user-select:none}
+.dp-tapbtn:active{animation:dp-pulse .15s}
+</style>
+</helmet>
+
+<div class="dp-app">
+
+<div style="padding:20px 22px 12px;display:flex;justify-content:space-between;align-items:center">
+<div>
+<h5 style="margin:0;color:var(--color-accent)">DUEL PARTY</h5>
+<div style="font-size:13px;opacity:.7">{{ roundLabel }}</div>
+</div>
+<span class="tag tag-outline">Salle #{{ roomCode }}</span>
+</div>
+
+<sc-if value="{{ isLobby }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:16px;flex:1">
+<p style="opacity:.75;margin:0">6 joueurs · élimination du plus lent à chaque manche · un dernier survivant</p>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ lobbyPlayers }}" as="p" hint-placeholder-count="6">
+<div class="dp-plrow">
+<div class="dp-avatar" style="background:{{ p.bg }};color:{{ p.fg }}">{{ p.initial }}</div>
+<span style="flex:1;font-size:14px">{{ p.name }}</span>
+<span class="tag tag-accent">Prêt</span>
+</div>
+</sc-for>
+</div>
+<button class="btn btn-primary btn-block" onclick="{{ startGame }}" style="height:50px;font-size:15px;margin-top:auto">Lancer la partie</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isCountdown }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px">
+<span class="tag tag-accent-2">{{ roundLabel }}</span>
+<div style="font-size:64px;font-weight:500;color:var(--color-accent)">{{ countdownVal }}</div>
+<p style="opacity:.7">Prépare ton doigt…</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPlay }}" hint-placeholder-val="{{ false }}">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:22px">
+<span class="tag tag-outline">{{ timeLeft }}s restantes</span>
+<button class="dp-tapbtn" onclick="{{ onTap }}">TAPE !<br>{{ myTaps }}</button>
+<p style="opacity:.7;font-size:13px">Tape le plus vite possible avant la fin du temps</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isRoundResult }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:14px;flex:1">
+<h3 style="margin:0">Résultats — {{ roundLabel }}</h3>
+<div style="display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ roundRows }}" as="p" hint-placeholder-count="6">
+<div class="dp-plrow" style="opacity:{{ p.opacity }}">
+<div class="dp-avatar" style="background:{{ p.bg }};color:{{ p.fg }}">{{ p.initial }}</div>
+<span style="flex:1;font-size:14px">{{ p.name }}</span>
+<span class="tag tag-neutral">{{ p.score }} taps</span>
+<sc-if value="{{ p.eliminated }}" hint-placeholder-val="{{ false }}"><span class="tag tag-outline">Éliminé</span></sc-if>
+</div>
+</sc-for>
+</div>
+<button class="btn btn-primary btn-block" onclick="{{ nextRound }}" style="height:48px;margin-top:auto">{{ nextRoundLabel }}</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isFinal }}" hint-placeholder-val="{{ false }}">
+<div style="padding:40px 22px;display:flex;flex-direction:column;gap:16px;flex:1;align-items:center;text-align:center;justify-content:center">
+<span class="tag tag-accent">Partie terminée</span>
+<h2 style="margin:6px 0 0">🏆 {{ winnerName }} remporte le duel !</h2>
+<p style="opacity:.75;margin:0">{{ winnerTaps }} taps lors de la dernière manche</p>
+<button class="btn btn-primary" onclick="{{ restart }}" style="padding:12px 28px">Rejouer</button>
+</div>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const NAMES = ['Toi', 'Léa', 'Tom', 'Nina', 'Sam', 'Zoé'];
+const COLORS = ['var(--color-accent-800)|var(--color-accent-100)', 'var(--color-neutral-800)|var(--color-neutral-100)'];
+const ROUND_SECONDS = 3;
+
+function makePlayers() {
+  return NAMES.map((name, i) => ({
+    name, initial: name[0], alive: true,
+    bg: i === 0 ? 'var(--color-accent-800)' : 'var(--color-neutral-800)',
+    fg: i === 0 ? 'var(--color-accent-100)' : 'var(--color-neutral-100)',
+  }));
+}
+
+class Component extends DCLogic {
+  state = { screen: 'lobby', players: makePlayers(), round: 1, countdownVal: 3, timeLeft: ROUND_SECONDS, myTaps: 0, roomCode: '4821', lastRoundScores: [], winner: null };
+
+  clearTimers() { clearInterval(this._interval); clearTimeout(this._timeout); }
+  componentWillUnmount() { this.clearTimers(); }
+
+  startGame = () => this.beginCountdown();
+
+  beginCountdown() {
+    this.clearTimers();
+    this.setState({ screen: 'countdown', countdownVal: 3 });
+    this._interval = setInterval(() => {
+      this.setState((s) => {
+        if (s.countdownVal <= 1) { clearInterval(this._interval); this.beginPlay(); return { countdownVal: 0 }; }
+        return { countdownVal: s.countdownVal - 1 };
+      });
+    }, 700);
+  }
+
+  beginPlay() {
+    this.setState({ screen: 'play', timeLeft: ROUND_SECONDS, myTaps: 0 });
+    this._interval = setInterval(() => {
+      this.setState((s) => {
+        if (s.timeLeft <= 1) { clearInterval(this._interval); this.finishRound(); return { timeLeft: 0 }; }
+        return { timeLeft: s.timeLeft - 1 };
+      });
+    }, 1000);
+  }
+
+  onTap = () => { if (this.state.screen === 'play') this.setState((s) => ({ myTaps: s.myTaps + 1 })); };
+
+  finishRound() {
+    const s = this.state;
+    const scored = s.players.map((p, i) => {
+      if (!p.alive) return { ...p, score: null };
+      const score = i === 0 ? s.myTaps : Math.floor(6 + Math.random() * 16);
+      return { ...p, score };
+    });
+    const aliveScored = scored.filter(p => p.alive);
+    const minScore = Math.min(...aliveScored.map(p => p.score));
+    let eliminatedOne = false;
+    const updated = scored.map(p => {
+      if (p.alive && p.score === minScore && !eliminatedOne) { eliminatedOne = true; return { ...p, alive: false, eliminated: true }; }
+      return { ...p, eliminated: false };
+    });
+    const stillAlive = updated.filter(p => p.alive);
+    this.setState({ screen: 'roundResult', players: updated, lastRoundScores: updated });
+    if (stillAlive.length <= 1) {
+      this._finalWinner = stillAlive[0] || updated[0];
+    } else {
+      this._finalWinner = null;
+    }
+  }
+
+  nextRound = () => {
+    if (this._finalWinner) {
+      this.setState({ screen: 'final', winner: this._finalWinner });
+    } else {
+      this.setState((s) => ({ round: s.round + 1 }));
+      this.beginCountdown();
+    }
+  };
+
+  restart = () => {
+    this.clearTimers();
+    this.setState({ screen: 'lobby', players: makePlayers(), round: 1, countdownVal: 3, timeLeft: ROUND_SECONDS, myTaps: 0, winner: null });
+  };
+
+  renderVals() {
+    const s = this.state;
+    const aliveCount = s.players.filter(p => p.alive).length;
+    return {
+      isLobby: s.screen === 'lobby', isCountdown: s.screen === 'countdown', isPlay: s.screen === 'play',
+      isRoundResult: s.screen === 'roundResult', isFinal: s.screen === 'final',
+      roomCode: s.roomCode,
+      roundLabel: s.screen === 'lobby' ? 'En attente des joueurs' : `Manche ${s.round} · ${aliveCount} en jeu`,
+      lobbyPlayers: s.players.map(p => ({ name: p.name, initial: p.initial, bg: p.bg, fg: p.fg })),
+      countdownVal: s.countdownVal || 0,
+      timeLeft: s.timeLeft, myTaps: s.myTaps, onTap: this.onTap,
+      roundRows: s.lastRoundScores.map(p => ({
+        name: p.name, initial: p.initial, bg: p.bg, fg: p.fg,
+        score: p.score ?? '—', eliminated: !!p.eliminated, opacity: p.alive || p.eliminated ? 1 : 0.4,
+      })),
+      nextRoundLabel: aliveCount <= 1 ? 'Voir le résultat final' : 'Manche suivante',
+      winnerName: s.winner ? s.winner.name : '', winnerTaps: s.winner ? s.winner.score : 0,
+      startGame: this.startGame, nextRound: this.nextRound, restart: this.restart,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

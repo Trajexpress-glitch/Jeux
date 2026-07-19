@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="./styles.css">
+<style>
+body{margin:0;background:var(--color-bg)}
+.bz-app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+.bz-head{padding:20px 22px 12px;display:flex;flex-direction:column;gap:14px}
+.bz-stats{display:flex;gap:12px}
+.bz-stat{flex:1;background:var(--color-surface);border-radius:var(--radius-md);padding:12px 14px;box-shadow:var(--shadow-sm)}
+.bz-buy{width:100%}
+.bz-row{display:flex;align-items:center;gap:12px;padding:12px;background:var(--color-surface);border-radius:var(--radius-md);box-shadow:var(--shadow-sm)}
+.bz-icon{width:40px;height:40px;border-radius:var(--radius-sm);flex:none;display:flex;align-items:center;justify-content:center;font-size:15px;font-weight:500;background:var(--color-accent-800);color:var(--color-accent-100)}
+.bz-log{font-size:13px;padding:10px 0;border-bottom:1px solid var(--color-divider)}
+</style>
+</helmet>
+
+<div class="bz-app">
+
+<div class="bz-head">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div>
+<h5 style="margin:0;color:var(--color-accent)">VIRTUALCORP</h5>
+<div style="font-size:13px;opacity:.7">Jour {{ day }}</div>
+</div>
+<span class="tag tag-accent-2">Valeur nette : {{ netWorthLabel }}</span>
+</div>
+
+<div class="bz-stats">
+<div class="bz-stat">
+<span class="card-kicker">Trésorerie</span>
+<div style="font-size:22px;font-weight:500">{{ cashLabel }}</div>
+</div>
+<div class="bz-stat">
+<span class="card-kicker">Revenu net / jour</span>
+<div style="font-size:22px;font-weight:500;color:{{ netColor }}">{{ netPerDayLabel }}</div>
+</div>
+</div>
+
+<sc-if value="{{ showMilestone }}" hint-placeholder-val="{{ false }}">
+<div class="card elev-md" style="border:1px solid var(--color-accent);text-align:center">
+<div class="card-title" style="color:var(--color-accent-300)">Empire atteint — 100 000 €</div>
+<div class="card-body">Ton entreprise virtuelle a passé le cap. Continue à jouer ou relance une nouvelle partie.</div>
+</div>
+</sc-if>
+
+<div class="seg" style="align-self:flex-start">
+<label class="seg-opt"><input type="radio" name="tab" checked="{{ tabBuildingsChecked }}" onchange="{{ selectBuildings }}"><span>Bâtiments</span></label>
+<label class="seg-opt"><input type="radio" name="tab" checked="{{ tabStaffChecked }}" onchange="{{ selectStaff }}"><span>Employés</span></label>
+<label class="seg-opt"><input type="radio" name="tab" checked="{{ tabJournalChecked }}" onchange="{{ selectJournal }}"><span>Journal</span></label>
+</div>
+</div>
+
+<div style="padding:4px 22px 24px;flex:1;display:flex;flex-direction:column;gap:12px">
+
+<sc-if value="{{ isBuildings }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ buildingRows }}" as="b" hint-placeholder-count="4">
+<div class="bz-row">
+<div class="bz-icon">{{ b.initial }}</div>
+<div style="flex:1">
+<div style="font-size:14px;font-weight:500">{{ b.name }} <span class="text-muted" style="font-size:12px">×{{ b.owned }}</span></div>
+<div style="font-size:12px;opacity:.7">+{{ b.income }} €/j · upkeep {{ b.upkeep }} €/j</div>
+</div>
+<button class="btn btn-primary" onclick="{{ b.onBuy }}" disabled="{{ b.disabled }}">Acheter {{ b.priceLabel }}</button>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ isStaff }}" hint-placeholder-val="{{ false }}">
+<sc-for list="{{ staffRows }}" as="e" hint-placeholder-count="3">
+<div class="bz-row">
+<div class="bz-icon" style="background:var(--color-neutral-800);color:var(--color-neutral-100)">{{ e.initial }}</div>
+<div style="flex:1">
+<div style="font-size:14px;font-weight:500">{{ e.name }} <span class="text-muted" style="font-size:12px">×{{ e.count }}</span></div>
+<div style="font-size:12px;opacity:.7">{{ e.effect }} · salaire {{ e.salary }} €/j</div>
+</div>
+<button class="btn btn-primary" onclick="{{ e.onHire }}" disabled="{{ e.disabled }}">Embaucher</button>
+</div>
+</sc-for>
+</sc-if>
+
+<sc-if value="{{ isJournal }}" hint-placeholder-val="{{ false }}">
+<sc-if value="{{ hasLog }}" hint-placeholder-val="{{ true }}">
+<sc-for list="{{ logRows }}" as="l" hint-placeholder-count="4">
+<div class="bz-log"><span class="text-muted">Jour {{ l.day }}</span> — {{ l.text }}</div>
+</sc-for>
+</sc-if>
+<sc-if value="{{ noLog }}" hint-placeholder-val="{{ false }}">
+<p class="text-muted">Aucun événement pour l'instant.</p>
+</sc-if>
+</sc-if>
+
+</div>
+
+<div style="padding:14px 22px 26px;position:sticky;bottom:0;background:var(--color-bg);border-top:1px solid var(--color-divider)">
+<button class="btn btn-primary btn-block" onclick="{{ advanceDay }}" style="height:50px;font-size:15px">Avancer d'un jour</button>
+</div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const BUILDINGS = [
+  { key:'entrepot', name:'Entrepôt', initial:'E', baseCost:2000, income:80, upkeep:10 },
+  { key:'bureau', name:'Bureau', initial:'B', baseCost:5000, income:220, upkeep:30 },
+  { key:'boutique', name:'Boutique', initial:'S', baseCost:12000, income:550, upkeep:80 },
+  { key:'usine', name:'Usine', initial:'U', baseCost:30000, income:1400, upkeep:220 },
+];
+const STAFF = [
+  { key:'vendeur', name:'Vendeur', initial:'V', cost:800, salary:60, effect:'+8% de revenu', max:6 },
+  { key:'manager', name:'Manager', initial:'M', cost:3000, salary:150, effect:'+20% de revenu', max:2 },
+  { key:'comptable', name:'Comptable', initial:'C', cost:2000, salary:100, effect:'-15% de charges', max:2 },
+];
+const EVENTS = [
+  { text:'Contrat bonus décroché', amount:600 },
+  { text:'Taxe imprévue', amount:-400 },
+  { text:'Panne réparée en urgence', amount:-250 },
+  { text:'Client fidèle recommande ton entreprise', amount:350 },
+];
+const STORAGE_KEY = 'bizsim-progress-v1';
+
+class Component extends DCLogic {
+  state = { day:1, cash:10000, tab:'buildings', buildings:{}, staff:{}, log:[] };
+
+  componentDidMount() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      this.setState({
+        day: saved.day ?? 1, cash: saved.cash ?? 10000,
+        buildings: saved.buildings ?? {}, staff: saved.staff ?? {}, log: saved.log ?? [],
+      });
+    } catch (e) {}
+  }
+
+  persist(next) {
+    const s = { ...this.state, ...next };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ day: s.day, cash: s.cash, buildings: s.buildings, staff: s.staff, log: s.log }));
+  }
+
+  buyBuilding = (key) => {
+    const b = BUILDINGS.find(x => x.key === key);
+    const owned = this.state.buildings[key] || 0;
+    const price = Math.round(b.baseCost * Math.pow(1.15, owned));
+    if (this.state.cash < price) return;
+    const buildings = { ...this.state.buildings, [key]: owned + 1 };
+    const cash = this.state.cash - price;
+    this.setState({ buildings, cash });
+    this.persist({ buildings, cash });
+  };
+
+  hireStaff = (key) => {
+    const e = STAFF.find(x => x.key === key);
+    const count = this.state.staff[key] || 0;
+    if (count >= e.max || this.state.cash < e.cost) return;
+    const staff = { ...this.state.staff, [key]: count + 1 };
+    const cash = this.state.cash - e.cost;
+    this.setState({ staff, cash });
+    this.persist({ staff, cash });
+  };
+
+  computeNet() {
+    const s = this.state;
+    let gross = 0, upkeep = 0;
+    BUILDINGS.forEach(b => { const n = s.buildings[b.key] || 0; gross += b.income * n; upkeep += b.upkeep * n; });
+    const vendeurN = s.staff.vendeur || 0, managerN = s.staff.manager || 0, comptableN = s.staff.comptable || 0;
+    const bonus = 1 + vendeurN * 0.08 + managerN * 0.20;
+    gross *= bonus;
+    upkeep *= (1 - Math.min(comptableN * 0.15, 0.3));
+    const salaries = vendeurN * STAFF[0].salary + managerN * STAFF[1].salary + comptableN * STAFF[2].salary;
+    return { gross: Math.round(gross), upkeep: Math.round(upkeep), salaries, net: Math.round(gross - upkeep - salaries) };
+  }
+
+  advanceDay = () => {
+    const { net } = this.computeNet();
+    let event = null;
+    if (Math.random() < 0.3) event = EVENTS[Math.floor(Math.random() * EVENTS.length)];
+    const eventAmount = event ? event.amount : 0;
+    const cash = this.state.cash + net + eventAmount;
+    const day = this.state.day + 1;
+    const entries = [{ day: this.state.day, text: `Résultat net : ${net >= 0 ? '+' : ''}${net} €` }];
+    if (event) entries.push({ day: this.state.day, text: `${event.text} (${event.amount >= 0 ? '+' : ''}${event.amount} €)` });
+    const log = [...entries.reverse(), ...this.state.log].slice(0, 30);
+    this.setState({ cash, day, log });
+    this.persist({ cash, day, log });
+  };
+
+  selectBuildings = () => this.setState({ tab: 'buildings' });
+  selectStaff = () => this.setState({ tab: 'staff' });
+  selectJournal = () => this.setState({ tab: 'journal' });
+
+  renderVals() {
+    const s = this.state;
+    const { net } = this.computeNet();
+    const buildingRows = BUILDINGS.map(b => {
+      const owned = s.buildings[b.key] || 0;
+      const price = Math.round(b.baseCost * Math.pow(1.15, owned));
+      return {
+        name: b.name, initial: b.initial, owned, income: b.income, upkeep: b.upkeep,
+        priceLabel: `(${price.toLocaleString('fr-FR')} €)`, disabled: s.cash < price,
+        onBuy: () => this.buyBuilding(b.key),
+      };
+    });
+    const staffRows = STAFF.map(e => {
+      const count = s.staff[e.key] || 0;
+      return {
+        name: e.name, initial: e.initial, count, effect: e.effect, salary: e.salary,
+        disabled: count >= e.max || s.cash < e.cost,
+        onHire: () => this.hireStaff(e.key),
+      };
+    });
+    let netWorth = s.cash;
+    BUILDINGS.forEach(b => { netWorth += (s.buildings[b.key] || 0) * b.baseCost * 0.6; });
+    return {
+      day: s.day, cashLabel: Math.round(s.cash).toLocaleString('fr-FR') + ' €',
+      netWorthLabel: Math.round(netWorth).toLocaleString('fr-FR') + ' €',
+      netPerDayLabel: (net >= 0 ? '+' : '') + net + ' €', netColor: net >= 0 ? 'var(--color-accent-300)' : 'var(--color-neutral-400)',
+      showMilestone: netWorth >= 100000,
+      isBuildings: s.tab === 'buildings', isStaff: s.tab === 'staff', isJournal: s.tab === 'journal',
+      tabBuildingsChecked: s.tab === 'buildings', tabStaffChecked: s.tab === 'staff', tabJournalChecked: s.tab === 'journal',
+      buildingRows, staffRows, logRows: s.log, hasLog: s.log.length > 0, noLog: s.log.length === 0,
+      selectBuildings: this.selectBuildings, selectStaff: this.selectStaff, selectJournal: this.selectJournal,
+      advanceDay: this.advanceDay,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
