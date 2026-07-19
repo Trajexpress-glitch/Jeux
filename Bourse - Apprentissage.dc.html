@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" href="./favicon.png">
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#161826"/><polyline points="40,140 70,110 100,130 130,80 160,60" fill="none" stroke="#9184d9" stroke-width="6"/><text x="100" y="170" font-family="Inter,sans-serif" font-size="15" fill="#e9e9ed" text-anchor="middle">Bourse</text></svg></template>
+<style>
+body{margin:0;background:var(--color-bg)}
+.bs-app{max-width:560px;margin:0 auto;min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+.bs-stat{flex:1;background:var(--color-surface);border-radius:var(--radius-md);padding:12px 14px;box-shadow:var(--shadow-sm)}
+.bs-legend{display:flex;align-items:center;gap:6px;font-size:12px;opacity:.75}
+.bs-dot{width:10px;height:10px;border-radius:2px}
+</style>
+</helmet>
+
+<div class="bs-app">
+
+<div style="padding:20px 22px 12px;display:flex;justify-content:space-between;align-items:center">
+<div>
+<h5 style="margin:0;color:var(--color-accent)">BOURSE — APPRENTISSAGE</h5>
+<div style="font-size:13px;opacity:.7">NOVA · jour {{ day }}</div>
+</div>
+<span class="tag {{ trendTagClass }}">{{ trendLabel }}</span>
+</div>
+
+<div style="padding:0 22px 6px;display:flex;gap:12px">
+<div class="bs-stat"><span class="card-kicker">Cours actuel</span><div style="font-size:22px;font-weight:500">{{ priceLabel }}</div></div>
+<div class="bs-stat"><span class="card-kicker">Trésorerie</span><div style="font-size:22px;font-weight:500">{{ cashLabel }}</div></div>
+<div class="bs-stat"><span class="card-kicker">Portefeuille</span><div style="font-size:22px;font-weight:500">{{ portfolioLabel }}</div></div>
+</div>
+
+<div style="padding:14px 22px 6px">
+<div class="card elev-sm" style="gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<span class="card-kicker">Graphique en chandeliers</span>
+<div style="display:flex;gap:10px">
+<div class="bs-legend"><div class="bs-dot" style="background:var(--color-accent)"></div>hausse</div>
+<div class="bs-legend"><div class="bs-dot" style="background:var(--color-neutral-500)"></div>baisse</div>
+<div class="bs-legend"><div class="bs-dot" style="background:var(--color-accent-2-400)"></div>moyenne mobile (5j)</div>
+</div>
+</div>
+<svg viewBox="0 0 {{ chartWidth }} 220" width="100%" height="220" style="overflow:visible" data-om-raster="true">
+<sc-for list="{{ candles }}" as="c" hint-placeholder-count="20">
+<line x1="{{ c.x }}" y1="{{ c.wickY1 }}" x2="{{ c.x }}" y2="{{ c.wickY2 }}" stroke="{{ c.color }}" stroke-width="1.5"></line>
+<rect x="{{ c.bodyX }}" y="{{ c.bodyY }}" width="{{ c.bodyW }}" height="{{ c.bodyH }}" fill="{{ c.color }}"></rect>
+</sc-for>
+<polyline points="{{ smaPoints }}" fill="none" stroke="var(--color-accent-2-400)" stroke-width="2"></polyline>
+</svg>
+</div>
+</div>
+
+<div style="padding:12px 22px 6px">
+<div class="card" style="box-shadow:var(--shadow-sm);gap:8px">
+<span class="card-kicker">Comment lire ce graphique</span>
+<p class="card-body" style="opacity:.85">Chaque chandelier résume une journée : le corps va de l'ouverture à la clôture (violet = hausse, gris = baisse), et les mèches montrent le plus haut et le plus bas atteints. La ligne en pointillé est la moyenne mobile sur 5 jours — quand le cours reste au-dessus, la tendance est jugée haussière ; en dessous, baissière.</p>
+</div>
+</div>
+
+<div style="padding:12px 22px 30px;display:flex;flex-direction:column;gap:12px;flex:1">
+<div class="card" style="gap:12px">
+<span class="card-kicker">Passer un ordre</span>
+<div style="display:flex;gap:10px;align-items:flex-end">
+<div class="field" style="flex:1">
+<label>Quantité</label>
+<input class="input" type="number" min="1" step="1" value="{{ qty }}" onchange="{{ setQty }}">
+</div>
+<button class="btn btn-primary" style="flex:1" onclick="{{ buy }}" disabled="{{ buyDisabled }}">Acheter</button>
+<button class="btn btn-secondary" style="flex:1" onclick="{{ sell }}" disabled="{{ sellDisabled }}">Vendre</button>
+</div>
+<div style="font-size:12px;opacity:.7">Tu détiens {{ shares }} action(s) · coût estimé {{ estCostLabel }}</div>
+</div>
+
+<button class="btn btn-primary btn-block" onclick="{{ advanceDay }}" style="height:48px">Clôturer la journée</button>
+
+<sc-if value="{{ hasLog }}" hint-placeholder-val="{{ false }}">
+<div class="card" style="box-shadow:var(--shadow-sm)">
+<span class="card-kicker">Journal</span>
+<sc-for list="{{ logRows }}" as="l" hint-placeholder-count="3">
+<div style="font-size:13px;padding:6px 0;border-bottom:1px solid var(--color-divider)"><span class="text-muted">J{{ l.day }}</span> — {{ l.text }}</div>
+</sc-for>
+</div>
+</sc-if>
+</div>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const STORAGE_KEY = 'bourse-apprentissage-v1';
+const CHART_H = 220, PAD_TOP = 10, PAD_BOTTOM = 10;
+
+function genCandle(prevClose) {
+  const drift = (Math.random() - 0.48) * 0.03;
+  const open = prevClose;
+  const close = Math.max(1, open * (1 + drift));
+  const high = Math.max(open, close) * (1 + Math.random() * 0.015);
+  const low = Math.min(open, close) * (1 - Math.random() * 0.015);
+  return { open, close, high, low };
+}
+function seedHistory(n, start) {
+  const hist = [];
+  let prev = start;
+  for (let i = 0; i < n; i++) { const c = genCandle(prev); hist.push(c); prev = c.close; }
+  return hist;
+}
+
+class Component extends DCLogic {
+  state = { day: 1, cash: 5000, shares: 0, qty: 10, history: seedHistory(20, 100), log: [] };
+
+  componentDidMount() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      if (saved.history) this.setState({ day: saved.day, cash: saved.cash, shares: saved.shares, history: saved.history, log: saved.log || [] });
+    } catch (e) {}
+  }
+  persist(next) {
+    const s = { ...this.state, ...next };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify({ day: s.day, cash: s.cash, shares: s.shares, history: s.history, log: s.log }));
+  }
+
+  setQty = (e) => this.setState({ qty: Math.max(1, parseInt(e.target.value, 10) || 1) });
+
+  buy = () => {
+    const s = this.state;
+    const price = s.history[s.history.length - 1].close;
+    const cost = price * s.qty;
+    if (cost > s.cash) return;
+    const cash = s.cash - cost, shares = s.shares + s.qty;
+    const log = [{ day: s.day, text: `Achat de ${s.qty} action(s) à ${price.toFixed(2)} €` }, ...s.log].slice(0, 20);
+    this.setState({ cash, shares, log });
+    this.persist({ cash, shares, log });
+  };
+  sell = () => {
+    const s = this.state;
+    if (s.shares < s.qty) return;
+    const price = s.history[s.history.length - 1].close;
+    const cash = s.cash + price * s.qty, shares = s.shares - s.qty;
+    const log = [{ day: s.day, text: `Vente de ${s.qty} action(s) à ${price.toFixed(2)} €` }, ...s.log].slice(0, 20);
+    this.setState({ cash, shares, log });
+    this.persist({ cash, shares, log });
+  };
+  advanceDay = () => {
+    const s = this.state;
+    const prev = s.history[s.history.length - 1].close;
+    const candle = genCandle(prev);
+    const history = [...s.history, candle].slice(-30);
+    const day = s.day + 1;
+    this.setState({ history, day });
+    this.persist({ history, day });
+  };
+
+  renderVals() {
+    const s = this.state;
+    const history = s.history;
+    const last = history[history.length - 1];
+    const prevClose = history.length > 1 ? history[history.length - 2].close : last.open;
+    const trendUp = last.close >= prevClose;
+    const n = history.length;
+    const chartWidth = Math.max(320, n * 22);
+    const maxP = Math.max(...history.map(c => c.high));
+    const minP = Math.min(...history.map(c => c.low));
+    const range = Math.max(maxP - minP, 0.01);
+    const yFor = (p) => PAD_TOP + (1 - (p - minP) / range) * (CHART_H - PAD_TOP - PAD_BOTTOM);
+    const slot = chartWidth / n;
+    const candles = history.map((c, i) => {
+      const x = slot * i + slot / 2;
+      const up = c.close >= c.open;
+      const color = up ? 'var(--color-accent)' : 'var(--color-neutral-500)';
+      const bodyTop = yFor(Math.max(c.open, c.close));
+      const bodyBottom = yFor(Math.min(c.open, c.close));
+      return {
+        x, wickY1: yFor(c.high), wickY2: yFor(c.low), color,
+        bodyX: x - slot * 0.3, bodyW: slot * 0.6, bodyY: bodyTop, bodyH: Math.max(2, bodyBottom - bodyTop),
+      };
+    });
+    const sma = history.map((_, i) => {
+      const from = Math.max(0, i - 4);
+      const win = history.slice(from, i + 1);
+      const avg = win.reduce((a, c) => a + c.close, 0) / win.length;
+      return `${slot * i + slot / 2},${yFor(avg)}`;
+    });
+    const price = last.close;
+    const estCost = price * s.qty;
+    return {
+      day: s.day, priceLabel: price.toFixed(2) + ' €',
+      cashLabel: Math.round(s.cash).toLocaleString('fr-FR') + ' €',
+      portfolioLabel: Math.round(s.cash + s.shares * price).toLocaleString('fr-FR') + ' €',
+      trendLabel: trendUp ? 'Haussier' : 'Baissier', trendTagClass: trendUp ? 'tag-accent' : 'tag-neutral',
+      chartWidth, candles, smaPoints: sma.join(' '),
+      qty: s.qty, setQty: this.setQty, shares: s.shares, estCostLabel: estCost.toFixed(2) + ' €',
+      buyDisabled: estCost > s.cash, sellDisabled: s.shares < s.qty,
+      buy: this.buy, sell: this.sell, advanceDay: this.advanceDay,
+      logRows: s.log, hasLog: s.log.length > 0,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

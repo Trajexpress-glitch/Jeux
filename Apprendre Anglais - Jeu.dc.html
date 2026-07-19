@@ -4,6 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <script src="./support.js"></script>
+<link rel="icon" href="./favicon.png">
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#232532"/><circle cx="100" cy="85" r="42" fill="none" stroke="#9184d9" stroke-width="6"/><text x="100" y="95" font-family="Inter,sans-serif" font-size="34" fill="#e9e9ed" text-anchor="middle">EN</text><text x="100" y="155" font-family="Inter,sans-serif" font-size="16" fill="#9184d9" text-anchor="middle">Daily English</text></svg></template>
 </head>
 <body>
 <x-dc>
@@ -125,67 +127,26 @@ body{margin:0;background:var(--color-bg)}
 
 <div class="dl-plan dl-plan-hi">
 <span class="card-kicker">Le plus populaire</span>
-<div class="card-title">Abonnement mensuel — 9,99 €/mois</div>
+<div class="card-title">Abonnement mensuel — 5 $CA/mois</div>
 <div class="card-body" style="opacity:.8">Accès illimité à toutes les leçons et langues</div>
-<button class="btn btn-primary btn-block" onclick="{{ openCheckout }}">Choisir ce plan</button>
+<a class="btn btn-primary btn-block" href="https://buy.stripe.com/aFa5kEchn3GBbASbnN3sI01" target="_blank" onclick="{{ subscribe }}">Choisir ce plan</a>
 </div>
 
 <div class="dl-plan">
 <span class="card-kicker">Ponctuel</span>
-<div class="card-title">Certificat de niveau — 19 €</div>
+<div class="card-title">Certificat de niveau — 1 $CA</div>
 <div class="card-body" style="opacity:.8">Passe un test et obtiens un certificat partageable</div>
-<button class="btn btn-secondary btn-block">Passer le test</button>
+<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/6oUfZiftz4KF34m77x3sI00" target="_blank">Passer le test</a>
 </div>
 
 <div class="dl-plan">
 <span class="card-kicker">À la carte</span>
-<div class="card-title">Cours supplémentaires — dès 4,99 €</div>
+<div class="card-title">Cours supplémentaires</div>
 <div class="card-body" style="opacity:.8">Finance personnelle, comptabilité, culture générale</div>
-<button class="btn btn-secondary btn-block">Explorer</button>
+<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/28E14o4OVa4ZgVc63t3sI03" target="_blank">Explorer</a>
 </div>
 
 <button class="btn btn-ghost" onclick="{{ closePaywall }}" style="align-self:center;margin-top:6px">Continuer gratuitement</button>
-</div>
-</sc-if>
-
-<sc-if value="{{ isCheckout }}" hint-placeholder-val="{{ false }}">
-<div style="padding:30px 22px 40px;display:flex;flex-direction:column;gap:16px;flex:1">
-<button class="btn btn-ghost" onclick="{{ backToPaywall }}" style="align-self:flex-start;padding-inline:4px">← Retour</button>
-<h3 style="margin:0">Paiement sécurisé</h3>
-<p style="opacity:.75;margin:0;font-size:13px">Abonnement mensuel — 9,99 €/mois · résiliable à tout moment</p>
-
-<div class="card elev-sm" style="gap:12px">
-<div class="field">
-<label>Numéro de carte</label>
-<input class="input" type="text" placeholder="4242 4242 4242 4242" value="{{ cardNumber }}" onchange="{{ setCardNumber }}">
-</div>
-<div style="display:flex;gap:12px">
-<div class="field" style="flex:1">
-<label>Expiration</label>
-<input class="input" type="text" placeholder="MM/AA" value="{{ cardExpiry }}" onchange="{{ setCardExpiry }}">
-</div>
-<div class="field" style="flex:1">
-<label>CVC</label>
-<input class="input" type="text" placeholder="123" value="{{ cardCvc }}" onchange="{{ setCardCvc }}">
-</div>
-</div>
-<div class="field">
-<label>Nom du titulaire</label>
-<input class="input" type="text" placeholder="Prénom Nom" value="{{ cardName }}" onchange="{{ setCardName }}">
-</div>
-</div>
-
-<button class="btn btn-primary btn-block" onclick="{{ payNow }}" disabled="{{ isProcessing }}" style="height:50px;font-size:15px">{{ payLabel }}</button>
-<p style="font-size:11px;opacity:.55;text-align:center;margin:0">Paiement chiffré traité par Stripe. Aucune donnée de carte n'est stockée sur nos serveurs.</p>
-</div>
-</sc-if>
-
-<sc-if value="{{ isSuccess }}" hint-placeholder-val="{{ false }}">
-<div style="padding:40px 22px;display:flex;flex-direction:column;gap:16px;flex:1;align-items:center;text-align:center;justify-content:center">
-<div style="width:64px;height:64px;border-radius:50%;border:2px solid var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--color-accent)">✓</div>
-<h2 style="margin:0">Bienvenue dans Premium</h2>
-<p style="opacity:.75;margin:0">Leçons illimitées débloquées. Un reçu a été envoyé par email.</p>
-<button class="btn btn-primary" onclick="{{ goHome }}" style="padding:12px 28px">Continuer</button>
 </div>
 </sc-if>
 
@@ -266,20 +227,7 @@ class Component extends DCLogic {
   goHome = () => this.setState({ screen: 'home' });
   openPaywall = () => this.setState({ screen: 'paywall' });
   closePaywall = () => this.setState({ screen: 'home' });
-  openCheckout = () => this.setState({ screen: 'checkout' });
-  backToPaywall = () => this.setState({ screen: 'paywall' });
-  setCardNumber = (e) => this.setState({ cardNumber: e.target.value });
-  setCardExpiry = (e) => this.setState({ cardExpiry: e.target.value });
-  setCardCvc = (e) => this.setState({ cardCvc: e.target.value });
-  setCardName = (e) => this.setState({ cardName: e.target.value });
-  payNow = () => {
-    if (this.state.isProcessing) return;
-    this.setState({ isProcessing: true });
-    setTimeout(() => {
-      this.setState({ isProcessing: false, isPremium: true, screen: 'success' });
-      this.persist({ isPremium: true });
-    }, 1200);
-  };
+  subscribe = () => { this.setState({ isPremium: true }); this.persist({ isPremium: true }); };
 
   renderVals() {
     const s = this.state;
@@ -297,11 +245,6 @@ class Component extends DCLogic {
     }) : [];
     return {
       isHome: s.screen === 'home', isLesson: s.screen === 'lesson', isResult: s.screen === 'result', isPaywall: s.screen === 'paywall',
-      isCheckout: s.screen === 'checkout', isSuccess: s.screen === 'success',
-      cardNumber: s.cardNumber, cardExpiry: s.cardExpiry, cardCvc: s.cardCvc, cardName: s.cardName, isProcessing: s.isProcessing,
-      payLabel: s.isProcessing ? 'Traitement…' : 'Payer 9,99 €',
-      openCheckout: this.openCheckout, backToPaywall: this.backToPaywall, payNow: this.payNow,
-      setCardNumber: this.setCardNumber, setCardExpiry: this.setCardExpiry, setCardCvc: this.setCardCvc, setCardName: this.setCardName,
       streak: s.streak, xp: s.xp, lessonsCompleted: s.lessonsCompleted, accuracyLabel: accuracy + '%',
       ringBg: `conic-gradient(var(--color-accent) ${Math.min(s.streak,7)/7*360}deg, var(--color-neutral-800) 0deg)`,
       todayTopic: TOPICS[s.lessonsCompleted % TOPICS.length],
