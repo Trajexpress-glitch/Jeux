@@ -129,21 +129,21 @@ body{margin:0;background:var(--color-bg)}
 <span class="card-kicker">Le plus populaire</span>
 <div class="card-title">Abonnement mensuel — 5 $CA/mois</div>
 <div class="card-body" style="opacity:.8">Accès illimité à toutes les leçons et langues</div>
-<a class="btn btn-primary btn-block" href="https://buy.stripe.com/aFa5kEchn3GBbASbnN3sI01" target="_blank" onclick="{{ subscribe }}">Choisir ce plan</a>
+<a class="btn btn-primary btn-block" href="https://buy.stripe.com/aFa5kEchn3GBbASbnN3sI01" target="_blank" onclick="{{ onSubscribeClick }}">Choisir ce plan</a>
 </div>
 
 <div class="dl-plan">
 <span class="card-kicker">Ponctuel</span>
 <div class="card-title">Certificat de niveau — 1 $CA</div>
 <div class="card-body" style="opacity:.8">Passe un test et obtiens un certificat partageable</div>
-<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/6oUfZiftz4KF34m77x3sI00" target="_blank">Passer le test</a>
+<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/6oUfZiftz4KF34m77x3sI00" target="_blank" onclick="{{ onCertificateClick }}">Passer le test</a>
 </div>
 
 <div class="dl-plan">
 <span class="card-kicker">À la carte</span>
 <div class="card-title">Cours supplémentaires</div>
 <div class="card-body" style="opacity:.8">Finance personnelle, comptabilité, culture générale</div>
-<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/28E14o4OVa4ZgVc63t3sI03" target="_blank">Explorer</a>
+<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/28E14o4OVa4ZgVc63t3sI03" target="_blank" onclick="{{ onCoursesClick }}">Explorer</a>
 </div>
 
 <button class="btn btn-ghost" onclick="{{ closePaywall }}" style="align-self:center;margin-top:6px">Continuer gratuitement</button>
@@ -169,6 +169,9 @@ const QUESTIONS = [
 ];
 const TOPICS = ['Anglais des affaires', 'Conversation quotidienne', 'Grammaire essentielle', 'Vocabulaire du bureau'];
 const STORAGE_KEY = 'daily-english-progress-v1';
+const SUB_URL = 'https://buy.stripe.com/aFa5kEchn3GBbASbnN3sI01';
+const CERT_URL = 'https://buy.stripe.com/6oUfZiftz4KF34m77x3sI00';
+const COURSES_URL = 'https://buy.stripe.com/28E14o4OVa4ZgVc63t3sI03';
 
 class Component extends DCLogic {
   state = { screen:'home', qIndex:0, score:0, selected:null, locked:false, lessonSet:[], streak:1, xp:0, lessonsCompleted:0, correctTotal:0, answeredTotal:0, isPremium:false, cardNumber:'', cardExpiry:'', cardCvc:'', cardName:'', isProcessing:false };
@@ -227,7 +230,16 @@ class Component extends DCLogic {
   goHome = () => this.setState({ screen: 'home' });
   openPaywall = () => this.setState({ screen: 'paywall' });
   closePaywall = () => this.setState({ screen: 'home' });
-  subscribe = () => { this.setState({ isPremium: true }); this.persist({ isPremium: true }); };
+
+  guardedOpen = (e, url) => {
+    if (localStorage.getItem('kyc_verified') !== '1') {
+      e.preventDefault();
+      window.location.href = './authentification-kyc.html?verify=1&return=' + encodeURIComponent(url);
+    }
+  };
+  onSubscribeClick = (e) => { this.guardedOpen(e, SUB_URL); if (localStorage.getItem('kyc_verified') === '1') { this.setState({ isPremium: true }); this.persist({ isPremium: true }); } };
+  onCertificateClick = (e) => this.guardedOpen(e, CERT_URL);
+  onCoursesClick = (e) => this.guardedOpen(e, COURSES_URL);
 
   renderVals() {
     const s = this.state;
@@ -258,7 +270,8 @@ class Component extends DCLogic {
       nextLabel: s.qIndex + 1 < total ? 'Question suivante' : 'Voir mes résultats',
       score: s.score, totalQuestions: total, xpGained: s.score * 10,
       startLesson: this.startLesson, nextQuestion: this.nextQuestion, goHome: this.goHome,
-      openPaywall: this.openPaywall, closePaywall: this.closePaywall, subscribe: this.subscribe,
+      openPaywall: this.openPaywall, closePaywall: this.closePaywall,
+      onSubscribeClick: this.onSubscribeClick, onCertificateClick: this.onCertificateClick, onCoursesClick: this.onCoursesClick,
     };
   }
 }

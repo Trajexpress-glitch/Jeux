@@ -34,7 +34,7 @@ body{margin:0;background:var(--color-bg)}
 </div>
 <div style="display:flex;align-items:center;gap:8px">
 <span class="tag tag-accent">{{ chipsLabel }}</span>
-<a class="btn btn-ghost" href="https://buy.stripe.com/dRmcN6dlr3GB8oGdvV3sI02" target="_blank" style="font-size:12px;padding:4px 8px">Recharger</a>
+<a class="btn btn-ghost" href="https://buy.stripe.com/dRmcN6dlr3GB8oGdvV3sI02" target="_blank" onclick="{{ onRechargeClick }}" style="font-size:12px;padding:4px 8px">Recharger</a>
 </div>
 </div>
 <div style="padding:0 22px 6px"><p style="font-size:11px;opacity:.55;margin:0">5 000 jetons offerts à l'inscription · rechargez à 0,01 $/jeton · jetons utilisables uniquement pour jouer, aucun échange contre de l'argent réel</p></div>
@@ -157,6 +157,7 @@ Quinte flush royale ×250 · Quinte flush ×50 · Carré ×25 · Full ×9 · Cou
 const SUITS = [{s:'♠',red:false},{s:'♥',red:true},{s:'♦',red:true},{s:'♣',red:false}];
 const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
 const STORAGE_KEY = 'card-games-chips-v1';
+const CHIPS_URL = 'https://buy.stripe.com/dRmcN6dlr3GB8oGdvV3sI02';
 const RED = '#c98787';
 
 function freshDeck() {
@@ -207,6 +208,12 @@ class Component extends DCLogic {
   }
   persist(chips) { localStorage.setItem(STORAGE_KEY, JSON.stringify({ chips })); }
 
+  onRechargeClick = (e) => {
+    if (localStorage.getItem('kyc_verified') !== '1') {
+      e.preventDefault();
+      window.location.href = './authentification-kyc.html?verify=1&return=' + encodeURIComponent(CHIPS_URL);
+    }
+  };
   selectBlackjack = () => this.setState({ tab: 'blackjack' });
   selectPoker = () => this.setState({ tab: 'poker' });
 
@@ -289,6 +296,7 @@ class Component extends DCLogic {
     const pkCards = s.pkHand.map((c, i) => ({ ...mkCard(c, true, s.pkHeld[i]), onClick: () => this.pkToggleHold(i) }));
     return {
       chipsLabel: Math.round(s.chips).toLocaleString('fr-FR') + ' jetons',
+      onRechargeClick: this.onRechargeClick,
       isBlackjackTab: s.tab === 'blackjack', isPokerTab: s.tab === 'poker',
       selectBlackjack: this.selectBlackjack, selectPoker: this.selectPoker,
       bjDealerCards, bjPlayerCards,

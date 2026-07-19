@@ -63,6 +63,17 @@ body{margin:0;background:var(--color-bg)}
 </div>
 </sc-if>
 
+<sc-if value="{{ isHub }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:14px;flex:1">
+<h3 style="margin:0">Bienvenue</h3>
+<p style="opacity:.75;margin:0;font-size:13px">Ton compte est créé. La vérification d'identité (KYC) ne sera demandée qu'au moment d'un premier achat.</p>
+<a class="card elev-sm" href="./bourse-apprentissage.html" style="text-decoration:none;color:inherit"><span class="card-kicker">Éducatif</span><div class="card-title">Bourse — Apprentissage</div></a>
+<a class="card elev-sm" href="./apprendre-anglais.html" style="text-decoration:none;color:inherit"><span class="card-kicker">Éducatif</span><div class="card-title">Daily English</div></a>
+<a class="card elev-sm" href="./jeux-de-cartes.html" style="text-decoration:none;color:inherit"><span class="card-kicker">Casino</span><div class="card-title">Jeux de cartes — Poker &amp; Blackjack</div></a>
+<button class="btn btn-secondary btn-block" onclick="{{ startVerification }}" style="height:44px;margin-top:6px">Vérifier mon identité maintenant</button>
+</div>
+</sc-if>
+
 <sc-if value="{{ isPersonal }}" hint-placeholder-val="{{ false }}">
 <div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:14px;flex:1">
 <p style="opacity:.75;margin:0;font-size:13px">Ces informations sont nécessaires pour vérifier ton identité (KYC), conformément à la réglementation.</p>
@@ -115,7 +126,7 @@ body{margin:0;background:var(--color-bg)}
 <div style="width:64px;height:64px;border-radius:50%;border:2px solid var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--color-accent)">✓</div>
 <h2 style="margin:0">Identité vérifiée</h2>
 <p style="opacity:.75;margin:0">Ton compte est prêt. Tu peux maintenant accéder à toutes les fonctionnalités.</p>
-<a href="./index.html" class="btn btn-primary" style="padding:12px 28px">Accéder à mon compte</a>
+<button class="btn btn-primary" onclick="{{ continueAfterVerified }}" style="padding:12px 28px">{{ verifiedButtonLabel }}</button>
 </div>
 </sc-if>
 
@@ -128,6 +139,24 @@ class Component extends DCLogic {
   state = {
     step: 'auth', mode: 'signup', email: '', password: '', password2: '',
     firstName: '', lastName: '', dob: '', address: '', city: '', postcode: '', country: 'FR', phone: '',
+    returnUrl: '', pendingVerify: false,
+  };
+
+  componentDidMount() {
+    const params = new URLSearchParams(window.location.search);
+    const wantsVerify = params.get('verify') === '1';
+    const returnUrl = params.get('return') || '';
+    const authed = localStorage.getItem('site_authed') === '1';
+    const verified = localStorage.getItem('kyc_verified') === '1';
+    if (wantsVerify && verified && returnUrl) { window.location.href = returnUrl; return; }
+    this.setState({ returnUrl, pendingVerify: wantsVerify });
+    if (authed) this.setState({ step: wantsVerify ? 'personal' : 'hub' });
+  }
+
+  startVerification = () => this.setState({ step: 'personal' });
+  continueAfterVerified = () => {
+    if (this.state.returnUrl) window.location.href = this.state.returnUrl;
+    else this.setState({ step: 'hub' });
   };
 
   selectSignup = () => this.setState({ mode: 'signup' });
@@ -144,11 +173,17 @@ class Component extends DCLogic {
   setCountry = (e) => this.setState({ country: e.target.value });
   setPhone = (e) => this.setState({ phone: e.target.value });
 
-  submitAuth = () => this.setState({ step: 'personal' });
+  submitAuth = () => {
+    localStorage.setItem('site_authed', '1');
+    this.setState({ step: this.state.pendingVerify ? 'personal' : 'hub' });
+  };
   submitPersonal = () => this.setState({ step: 'document' });
   submitDocuments = () => {
     this.setState({ step: 'pending' });
-    setTimeout(() => this.setState({ step: 'verified' }), 2200);
+    setTimeout(() => {
+      localStorage.setItem('kyc_verified', '1');
+      this.setState({ step: 'verified' });
+    }, 2200);
   };
 
   renderVals() {
@@ -156,11 +191,13 @@ class Component extends DCLogic {
     const isSignup = s.mode === 'signup';
     const authDisabled = !s.email || !s.password || (isSignup && s.password !== s.password2);
     const personalDisabled = !s.firstName || !s.lastName || !s.dob || !s.address || !s.city || !s.postcode || !s.phone;
-    const stepIndex = { auth: 0, personal: 1, document: 2, pending: 3, verified: 3 }[s.step];
+    const stepIndex = { auth: 0, hub: 0, personal: 1, document: 2, pending: 3, verified: 3 }[s.step];
     return {
-      isAuth: s.step === 'auth', isPersonal: s.step === 'personal', isDocument: s.step === 'document',
+      isAuth: s.step === 'auth', isHub: s.step === 'hub', isPersonal: s.step === 'personal', isDocument: s.step === 'document',
       isPending: s.step === 'pending', isVerified: s.step === 'verified',
-      stepLabel: ['Étape 1 · Compte', 'Étape 2 · Informations personnelles', 'Étape 3 · Vérification d\'identité', 'Vérification'][stepIndex],
+      startVerification: this.startVerification, continueAfterVerified: this.continueAfterVerified,
+      verifiedButtonLabel: s.returnUrl ? 'Continuer mon achat' : 'Accéder à mon compte',
+      stepLabel: { auth: 'Étape 1 · Compte', hub: 'Connecté', personal: 'Étape 2 · Informations personnelles', document: 'Étape 3 · Vérification d\'identité', pending: 'Vérification', verified: 'Vérification' }[s.step],
       dot1: stepIndex >= 0 ? 'kyc-done' : '', dot2: stepIndex >= 1 ? 'kyc-done' : '',
       dot3: stepIndex >= 2 ? 'kyc-done' : '', dot4: stepIndex >= 3 ? 'kyc-done' : '',
       isSignup, isLogin: !isSignup, selectSignup: this.selectSignup, selectLogin: this.selectLogin,
