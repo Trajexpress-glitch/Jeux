@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" href="./favicon.png">
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#161826"/><circle cx="100" cy="80" r="30" fill="none" stroke="#9184d9" stroke-width="6"/><path d="M55 155 q45 -50 90 0" fill="none" stroke="#9184d9" stroke-width="6"/><text x="100" y="180" font-family="Inter,sans-serif" font-size="14" fill="#e9e9ed" text-anchor="middle">Vérification</text></svg></template>
+<style>
+body{margin:0;background:var(--color-bg)}
+@keyframes kyc-spin{to{transform:rotate(360deg)}}
+.kyc-app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+.kyc-steps{display:flex;gap:6px;padding:0 22px}
+.kyc-dot{flex:1;height:4px;border-radius:2px;background:var(--color-neutral-800)}
+.kyc-dot.kyc-done{background:var(--color-accent)}
+.kyc-spinner{width:40px;height:40px;border-radius:50%;border:3px solid var(--color-neutral-800);border-top-color:var(--color-accent);animation:kyc-spin 0.8s linear infinite}
+</style>
+</helmet>
+
+<div class="kyc-app">
+
+<div style="padding:22px 22px 14px">
+<h5 style="margin:0 0 4px;color:var(--color-accent)">MON COMPTE</h5>
+<div style="font-size:13px;opacity:.7;margin-bottom:14px">{{ stepLabel }}</div>
+<div class="kyc-steps">
+<div class="kyc-dot {{ dot1 }}"></div>
+<div class="kyc-dot {{ dot2 }}"></div>
+<div class="kyc-dot {{ dot3 }}"></div>
+<div class="kyc-dot {{ dot4 }}"></div>
+</div>
+</div>
+
+<sc-if value="{{ isAuth }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:16px;flex:1">
+<div class="seg" style="align-self:flex-start">
+<label class="seg-opt"><input type="radio" name="mode" checked="{{ isSignup }}" onchange="{{ selectSignup }}"><span>Créer un compte</span></label>
+<label class="seg-opt"><input type="radio" name="mode" checked="{{ isLogin }}" onchange="{{ selectLogin }}"><span>Se connecter</span></label>
+</div>
+
+<div class="field">
+<label>Adresse email</label>
+<input class="input" type="email" placeholder="prenom@email.com" value="{{ email }}" onchange="{{ setEmail }}">
+</div>
+<div class="field">
+<label>Mot de passe</label>
+<input class="input" type="password" placeholder="••••••••" value="{{ password }}" onchange="{{ setPassword }}">
+</div>
+<sc-if value="{{ isSignup }}" hint-placeholder-val="{{ true }}">
+<div class="field">
+<label>Confirmer le mot de passe</label>
+<input class="input" type="password" placeholder="••••••••" value="{{ password2 }}" onchange="{{ setPassword2 }}">
+</div>
+</sc-if>
+
+<button class="btn btn-primary btn-block" onclick="{{ submitAuth }}" disabled="{{ authDisabled }}" style="height:48px">{{ authButtonLabel }}</button>
+<p style="font-size:11px;opacity:.55;text-align:center;margin:0">En continuant, tu acceptes nos conditions d'utilisation et notre politique de confidentialité.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isHub }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:14px;flex:1">
+<h3 style="margin:0">Bienvenue</h3>
+<p style="opacity:.75;margin:0;font-size:13px">Ton compte est créé. La vérification d'identité (KYC) ne sera demandée qu'au moment d'un premier achat.</p>
+<a class="card elev-sm" href="./bourse-apprentissage.html" style="text-decoration:none;color:inherit"><span class="card-kicker">Éducatif</span><div class="card-title">Bourse — Apprentissage</div></a>
+<a class="card elev-sm" href="./apprendre-anglais.html" style="text-decoration:none;color:inherit"><span class="card-kicker">Éducatif</span><div class="card-title">Daily English</div></a>
+<a class="card elev-sm" href="./jeux-de-cartes.html" style="text-decoration:none;color:inherit"><span class="card-kicker">Casino</span><div class="card-title">Jeux de cartes — Poker &amp; Blackjack</div></a>
+<button class="btn btn-secondary btn-block" onclick="{{ startVerification }}" style="height:44px;margin-top:6px">Vérifier mon identité maintenant</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPersonal }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:14px;flex:1">
+<p style="opacity:.75;margin:0;font-size:13px">Ces informations sont nécessaires pour vérifier ton identité (KYC), conformément à la réglementation.</p>
+<div style="display:flex;gap:12px">
+<div class="field" style="flex:1"><label>Prénom</label><input class="input" type="text" value="{{ firstName }}" onchange="{{ setFirstName }}"></div>
+<div class="field" style="flex:1"><label>Nom</label><input class="input" type="text" value="{{ lastName }}" onchange="{{ setLastName }}"></div>
+</div>
+<div class="field"><label>Date de naissance</label><input class="input" type="date" value="{{ dob }}" onchange="{{ setDob }}"></div>
+<div class="field"><label>Adresse</label><input class="input" type="text" placeholder="12 rue des Lilas" value="{{ address }}" onchange="{{ setAddress }}"></div>
+<div style="display:flex;gap:12px">
+<div class="field" style="flex:1"><label>Ville</label><input class="input" type="text" value="{{ city }}" onchange="{{ setCity }}"></div>
+<div class="field" style="flex:1"><label>Code postal</label><input class="input" type="text" value="{{ postcode }}" onchange="{{ setPostcode }}"></div>
+</div>
+<div class="field"><label>Pays</label>
+<select class="input" onchange="{{ setCountry }}">
+<option value="FR">France</option><option value="BE">Belgique</option><option value="CH">Suisse</option><option value="CA">Canada</option><option value="LU">Luxembourg</option>
+</select>
+</div>
+<div class="field"><label>Téléphone</label><input class="input" type="tel" placeholder="+33 6 12 34 56 78" value="{{ phone }}" onchange="{{ setPhone }}"></div>
+<button class="btn btn-primary btn-block" onclick="{{ submitPersonal }}" disabled="{{ personalDisabled }}" style="height:48px">Continuer</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isDocument }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:14px;flex:1">
+<p style="opacity:.75;margin:0;font-size:13px">Vérification d'identité traitée de façon sécurisée par Stripe Identity. Tes documents ne sont jamais stockés sur nos serveurs.</p>
+<div class="field"><label>Pièce d'identité — recto</label>
+<div style="width:100%;height:150px"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="kyc-id-front" shape="rounded" placeholder="Dépose la photo du recto" hint-size="100%,150px"></x-import></div>
+</div>
+<div class="field"><label>Pièce d'identité — verso</label>
+<div style="width:100%;height:150px"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="kyc-id-back" shape="rounded" placeholder="Dépose la photo du verso" hint-size="100%,150px"></x-import></div>
+</div>
+<div class="field"><label>Selfie de vérification</label>
+<div style="width:130px;height:130px"><x-import component-from-global-scope="image-slot" from="./image-slot.js" id="kyc-selfie" shape="circle" placeholder="Selfie" hint-size="130px,130px"></x-import></div>
+</div>
+<button class="btn btn-primary btn-block" onclick="{{ submitDocuments }}" style="height:48px">Envoyer pour vérification</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPending }}" hint-placeholder-val="{{ false }}">
+<div style="padding:60px 22px;display:flex;flex-direction:column;gap:18px;flex:1;align-items:center;text-align:center;justify-content:center">
+<div class="kyc-spinner"></div>
+<h3 style="margin:0">Vérification en cours</h3>
+<p style="opacity:.75;margin:0;font-size:13px">Analyse de tes documents via Stripe Identity — généralement moins de 2 minutes.</p>
+</div>
+</sc-if>
+
+<sc-if value="{{ isVerified }}" hint-placeholder-val="{{ false }}">
+<div style="padding:60px 22px;display:flex;flex-direction:column;gap:16px;flex:1;align-items:center;text-align:center;justify-content:center">
+<div style="width:64px;height:64px;border-radius:50%;border:2px solid var(--color-accent);display:flex;align-items:center;justify-content:center;font-size:26px;color:var(--color-accent)">✓</div>
+<h2 style="margin:0">Identité vérifiée</h2>
+<p style="opacity:.75;margin:0">Ton compte est prêt. Tu peux maintenant accéder à toutes les fonctionnalités.</p>
+<button class="btn btn-primary" onclick="{{ continueAfterVerified }}" style="padding:12px 28px">{{ verifiedButtonLabel }}</button>
+</div>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+class Component extends DCLogic {
+  state = {
+    step: 'auth', mode: 'signup', email: '', password: '', password2: '',
+    firstName: '', lastName: '', dob: '', address: '', city: '', postcode: '', country: 'FR', phone: '',
+    returnUrl: '', pendingVerify: false,
+  };
+
+  componentDidMount() {
+    const params = new URLSearchParams(window.location.search);
+    const wantsVerify = params.get('verify') === '1';
+    const returnUrl = params.get('return') || '';
+    const authed = localStorage.getItem('site_authed') === '1';
+    const verified = localStorage.getItem('kyc_verified') === '1';
+    if (wantsVerify && verified && returnUrl) { window.location.href = returnUrl; return; }
+    this.setState({ returnUrl, pendingVerify: wantsVerify });
+    if (authed) this.setState({ step: wantsVerify ? 'personal' : 'hub' });
+  }
+
+  startVerification = () => this.setState({ step: 'personal' });
+  continueAfterVerified = () => {
+    if (this.state.returnUrl) window.location.href = this.state.returnUrl;
+    else this.setState({ step: 'hub' });
+  };
+
+  selectSignup = () => this.setState({ mode: 'signup' });
+  selectLogin = () => this.setState({ mode: 'login' });
+  setEmail = (e) => this.setState({ email: e.target.value });
+  setPassword = (e) => this.setState({ password: e.target.value });
+  setPassword2 = (e) => this.setState({ password2: e.target.value });
+  setFirstName = (e) => this.setState({ firstName: e.target.value });
+  setLastName = (e) => this.setState({ lastName: e.target.value });
+  setDob = (e) => this.setState({ dob: e.target.value });
+  setAddress = (e) => this.setState({ address: e.target.value });
+  setCity = (e) => this.setState({ city: e.target.value });
+  setPostcode = (e) => this.setState({ postcode: e.target.value });
+  setCountry = (e) => this.setState({ country: e.target.value });
+  setPhone = (e) => this.setState({ phone: e.target.value });
+
+  submitAuth = () => {
+    localStorage.setItem('site_authed', '1');
+    this.setState({ step: this.state.pendingVerify ? 'personal' : 'hub' });
+  };
+  submitPersonal = () => this.setState({ step: 'document' });
+  submitDocuments = () => {
+    this.setState({ step: 'pending' });
+    setTimeout(() => {
+      localStorage.setItem('kyc_verified', '1');
+      this.setState({ step: 'verified' });
+    }, 2200);
+  };
+
+  renderVals() {
+    const s = this.state;
+    const isSignup = s.mode === 'signup';
+    const authDisabled = !s.email || !s.password || (isSignup && s.password !== s.password2);
+    const personalDisabled = !s.firstName || !s.lastName || !s.dob || !s.address || !s.city || !s.postcode || !s.phone;
+    const stepIndex = { auth: 0, hub: 0, personal: 1, document: 2, pending: 3, verified: 3 }[s.step];
+    return {
+      isAuth: s.step === 'auth', isHub: s.step === 'hub', isPersonal: s.step === 'personal', isDocument: s.step === 'document',
+      isPending: s.step === 'pending', isVerified: s.step === 'verified',
+      startVerification: this.startVerification, continueAfterVerified: this.continueAfterVerified,
+      verifiedButtonLabel: s.returnUrl ? 'Continuer mon achat' : 'Accéder à mon compte',
+      stepLabel: { auth: 'Étape 1 · Compte', hub: 'Connecté', personal: 'Étape 2 · Informations personnelles', document: 'Étape 3 · Vérification d\'identité', pending: 'Vérification', verified: 'Vérification' }[s.step],
+      dot1: stepIndex >= 0 ? 'kyc-done' : '', dot2: stepIndex >= 1 ? 'kyc-done' : '',
+      dot3: stepIndex >= 2 ? 'kyc-done' : '', dot4: stepIndex >= 3 ? 'kyc-done' : '',
+      isSignup, isLogin: !isSignup, selectSignup: this.selectSignup, selectLogin: this.selectLogin,
+      email: s.email, password: s.password, password2: s.password2,
+      setEmail: this.setEmail, setPassword: this.setPassword, setPassword2: this.setPassword2,
+      authDisabled, authButtonLabel: isSignup ? 'Créer mon compte' : 'Se connecter', submitAuth: this.submitAuth,
+      firstName: s.firstName, lastName: s.lastName, dob: s.dob, address: s.address, city: s.city, postcode: s.postcode, phone: s.phone,
+      setFirstName: this.setFirstName, setLastName: this.setLastName, setDob: this.setDob, setAddress: this.setAddress,
+      setCity: this.setCity, setPostcode: this.setPostcode, setCountry: this.setCountry, setPhone: this.setPhone,
+      personalDisabled, submitPersonal: this.submitPersonal, submitDocuments: this.submitDocuments,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

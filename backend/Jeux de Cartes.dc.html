@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="./styles.css">
+<link rel="icon" href="./favicon.png">
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#161826"/><text x="100" y="115" font-family="Inter,sans-serif" font-size="60" fill="#9184d9" text-anchor="middle">♠</text><text x="100" y="165" font-family="Inter,sans-serif" font-size="15" fill="#e9e9ed" text-anchor="middle">Cartes</text></svg></template>
+<style>
+body{margin:0;background:var(--color-bg)}
+.cg-app{max-width:520px;margin:0 auto;min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+.cg-card{width:58px;height:82px;border-radius:8px;background:var(--color-surface);border:1px solid var(--color-divider);display:flex;flex-direction:column;justify-content:space-between;padding:6px;font-family:'Inter',sans-serif;flex:none;box-shadow:var(--shadow-sm)}
+.cg-card.cg-back{background:linear-gradient(135deg, var(--color-accent-800), var(--color-accent-900));display:flex;align-items:center;justify-content:center}
+.cg-card.cg-held{box-shadow:0 0 0 2px var(--color-accent)}
+.cg-rank{font-size:15px;font-weight:600;line-height:1}
+.cg-suit{font-size:22px;text-align:center;line-height:1}
+.cg-row{display:flex;gap:8px;flex-wrap:wrap}
+.cg-table{background:var(--color-surface);border-radius:var(--radius-lg);padding:20px;display:flex;flex-direction:column;gap:16px;box-shadow:var(--shadow-md)}
+</style>
+</helmet>
+
+<div class="cg-app">
+
+<div style="padding:20px 22px 12px;display:flex;justify-content:space-between;align-items:center">
+<div>
+<h5 style="margin:0;color:var(--color-accent)">TABLE DE JEU</h5>
+<div style="font-size:13px;opacity:.7">Blackjack &amp; Poker</div>
+</div>
+<div style="display:flex;align-items:center;gap:8px">
+<span class="tag tag-accent">{{ chipsLabel }}</span>
+<a class="btn btn-ghost" href="https://buy.stripe.com/dRmcN6dlr3GB8oGdvV3sI02" target="_blank" onclick="{{ onRechargeClick }}" style="font-size:12px;padding:4px 8px">Recharger</a>
+</div>
+</div>
+<div style="padding:0 22px 6px"><p style="font-size:11px;opacity:.55;margin:0">5 000 jetons offerts à l'inscription · rechargez à 0,01 $/jeton · jetons utilisables uniquement pour jouer, aucun échange contre de l'argent réel</p></div>
+
+<div style="padding:0 22px 12px">
+<div class="seg">
+<label class="seg-opt"><input type="radio" name="game" checked="{{ isBlackjackTab }}" onchange="{{ selectBlackjack }}"><span>Blackjack</span></label>
+<label class="seg-opt"><input type="radio" name="game" checked="{{ isPokerTab }}" onchange="{{ selectPoker }}"><span>Poker</span></label>
+</div>
+</div>
+
+<sc-if value="{{ isBlackjackTab }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:18px;flex:1">
+
+<div class="cg-table">
+<div>
+<div class="card-kicker">Croupier {{ bjDealerLabel }}</div>
+<div class="cg-row" style="margin-top:8px">
+<sc-for list="{{ bjDealerCards }}" as="c" hint-placeholder-count="2">
+<div class="{{ c.className }}">
+<sc-if value="{{ c.faceUp }}" hint-placeholder-val="{{ true }}">
+<div class="cg-rank" style="color:{{ c.color }}">{{ c.rank }}</div>
+<div class="cg-suit" style="color:{{ c.color }}">{{ c.suit }}</div>
+</sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+<div class="hr"></div>
+<div>
+<div class="card-kicker">Ta main {{ bjPlayerLabel }}</div>
+<div class="cg-row" style="margin-top:8px">
+<sc-for list="{{ bjPlayerCards }}" as="c" hint-placeholder-count="2">
+<div class="{{ c.className }}">
+<div class="cg-rank" style="color:{{ c.color }}">{{ c.rank }}</div>
+<div class="cg-suit" style="color:{{ c.color }}">{{ c.suit }}</div>
+</div>
+</sc-for>
+</div>
+</div>
+</div>
+
+<sc-if value="{{ bjMessage }}" hint-placeholder-val="{{ false }}">
+<div class="card" style="box-shadow:var(--shadow-sm);border:1px solid {{ bjMessageColor }}"><div class="card-body">{{ bjMessage }}</div></div>
+</sc-if>
+
+<sc-if value="{{ bjIsBetting }}" hint-placeholder-val="{{ true }}">
+<div class="field">
+<label>Mise</label>
+<input class="input" type="number" min="10" step="10" value="{{ bjBet }}" onchange="{{ setBjBet }}">
+</div>
+<button class="btn btn-primary btn-block" onclick="{{ bjDeal }}" style="height:48px">Distribuer</button>
+</sc-if>
+
+<sc-if value="{{ bjIsPlaying }}" hint-placeholder-val="{{ false }}">
+<div style="display:flex;gap:10px">
+<button class="btn btn-primary" style="flex:1;height:48px" onclick="{{ bjHit }}">Tirer</button>
+<button class="btn btn-secondary" style="flex:1;height:48px" onclick="{{ bjStand }}">Rester</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ bjIsDone }}" hint-placeholder-val="{{ false }}">
+<button class="btn btn-primary btn-block" onclick="{{ bjNewRound }}" style="height:48px">Nouvelle main</button>
+</sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isPokerTab }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:18px;flex:1">
+
+<div class="cg-table">
+<div class="card-kicker">Vidéo poker — Jacks or Better</div>
+<div class="cg-row">
+<sc-for list="{{ pkCards }}" as="c" hint-placeholder-count="5">
+<div class="{{ c.className }}" onclick="{{ c.onClick }}">
+<div class="cg-rank" style="color:{{ c.color }}">{{ c.rank }}</div>
+<div class="cg-suit" style="color:{{ c.color }}">{{ c.suit }}</div>
+</div>
+</sc-for>
+</div>
+<p style="font-size:11px;opacity:.6;margin:0">Clique sur les cartes à conserver avant de tirer</p>
+</div>
+
+<sc-if value="{{ pkResultLabel }}" hint-placeholder-val="{{ false }}">
+<div class="card" style="box-shadow:var(--shadow-sm);border:1px solid {{ pkResultColor }}"><div class="card-body">{{ pkResultLabel }}</div></div>
+</sc-if>
+
+<sc-if value="{{ pkIsBetting }}" hint-placeholder-val="{{ true }}">
+<div class="field">
+<label>Mise</label>
+<input class="input" type="number" min="10" step="10" value="{{ pkBet }}" onchange="{{ setPkBet }}">
+</div>
+<button class="btn btn-primary btn-block" onclick="{{ pkDeal }}" style="height:48px">Distribuer</button>
+</sc-if>
+
+<sc-if value="{{ pkIsDraw }}" hint-placeholder-val="{{ false }}">
+<button class="btn btn-primary btn-block" onclick="{{ pkDraw }}" style="height:48px">Tirer les cartes non gardées</button>
+</sc-if>
+
+<sc-if value="{{ pkIsDone }}" hint-placeholder-val="{{ false }}">
+<button class="btn btn-primary btn-block" onclick="{{ pkNewRound }}" style="height:48px">Nouvelle main</button>
+</sc-if>
+
+<div class="card" style="box-shadow:var(--shadow-sm)">
+<span class="card-kicker">Table des gains</span>
+<div style="font-size:12px;opacity:.8;line-height:1.7">
+Quinte flush royale ×250 · Quinte flush ×50 · Carré ×25 · Full ×9 · Couleur ×6 · Suite ×4 · Brelan ×3 · Deux paires ×2 · Paire de Valets ou mieux ×1
+</div>
+</div>
+
+</div>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const SUITS = [{s:'♠',red:false},{s:'♥',red:true},{s:'♦',red:true},{s:'♣',red:false}];
+const RANKS = ['A','2','3','4','5','6','7','8','9','10','J','Q','K'];
+const STORAGE_KEY = 'card-games-chips-v1';
+const CHIPS_URL = 'https://buy.stripe.com/dRmcN6dlr3GB8oGdvV3sI02';
+const RED = '#c98787';
+
+function freshDeck() {
+  const deck = [];
+  SUITS.forEach(su => RANKS.forEach((r, i) => deck.push({ rank: r, suit: su.s, red: su.red, value: i + 2 <= 14 ? (r === 'A' ? 14 : (i + 2)) : i + 2 })));
+  return deck;
+}
+function shuffle(deck) {
+  const a = deck.slice();
+  for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+  return a;
+}
+function bjValue(cards) {
+  let total = 0, aces = 0;
+  cards.forEach(c => { const v = c.rank === 'A' ? 11 : (['J','Q','K'].includes(c.rank) ? 10 : parseInt(c.rank, 10)); total += v; if (c.rank === 'A') aces++; });
+  while (total > 21 && aces > 0) { total -= 10; aces--; }
+  return total;
+}
+function evaluatePoker(cards) {
+  const values = cards.map(c => c.value).sort((a, b) => a - b);
+  const isFlush = cards.every(c => c.suit === cards[0].suit);
+  const distinct = [...new Set(values)];
+  const isStraight = distinct.length === 5 && (values[4] - values[0] === 4);
+  const counts = {};
+  values.forEach(v => counts[v] = (counts[v] || 0) + 1);
+  const groups = Object.entries(counts).map(([v, c]) => ({ v: parseInt(v, 10), c })).sort((a, b) => b.c - a.c || b.v - a.v);
+  if (isFlush && isStraight && values[0] === 10) return { label: 'Quinte flush royale !', mult: 250 };
+  if (isFlush && isStraight) return { label: 'Quinte flush', mult: 50 };
+  if (groups[0].c === 4) return { label: 'Carré', mult: 25 };
+  if (groups[0].c === 3 && groups[1] && groups[1].c === 2) return { label: 'Full house', mult: 9 };
+  if (isFlush) return { label: 'Couleur', mult: 6 };
+  if (isStraight) return { label: 'Suite', mult: 4 };
+  if (groups[0].c === 3) return { label: 'Brelan', mult: 3 };
+  if (groups[0].c === 2 && groups[1] && groups[1].c === 2) return { label: 'Deux paires', mult: 2 };
+  if (groups[0].c === 2 && groups[0].v >= 11) return { label: 'Paire de valets ou mieux', mult: 1 };
+  return { label: 'Main perdante', mult: 0 };
+}
+
+class Component extends DCLogic {
+  state = {
+    tab: 'blackjack', chips: 5000,
+    bjPhase: 'betting', bjBet: 20, bjPlayer: [], bjDealer: [], bjDealerHidden: true, bjMessage: '', bjMessageColor: 'var(--color-neutral-600)', bjDeck: [],
+    pkPhase: 'betting', pkBet: 20, pkHand: [], pkHeld: [false, false, false, false, false], pkResult: '', pkResultMult: 0, pkDeck: [],
+  };
+
+  componentDidMount() {
+    try { const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}'); if (saved.chips) this.setState({ chips: saved.chips }); } catch (e) {}
+  }
+  persist(chips) { localStorage.setItem(STORAGE_KEY, JSON.stringify({ chips })); }
+
+  onRechargeClick = (e) => {
+    if (localStorage.getItem('kyc_verified') !== '1') {
+      e.preventDefault();
+      window.location.href = './authentification-kyc.html?verify=1&return=' + encodeURIComponent(CHIPS_URL);
+    }
+  };
+  selectBlackjack = () => this.setState({ tab: 'blackjack' });
+  selectPoker = () => this.setState({ tab: 'poker' });
+
+  setBjBet = (e) => this.setState({ bjBet: Math.max(10, parseInt(e.target.value, 10) || 10) });
+  bjDeal = () => {
+    const s = this.state;
+    if (s.chips < s.bjBet) { this.setState({ bjMessage: 'Solde insuffisant.', bjMessageColor: 'var(--color-neutral-600)' }); return; }
+    const deck = shuffle(freshDeck());
+    const player = [deck.pop(), deck.pop()], dealer = [deck.pop(), deck.pop()];
+    const chips = s.chips - s.bjBet;
+    this.setState({ bjDeck: deck, bjPlayer: player, bjDealer: dealer, bjDealerHidden: true, bjPhase: 'playing', bjMessage: '', chips });
+    this.persist(chips);
+    if (bjValue(player) === 21) this.bjResolve(player, dealer, true);
+  };
+  bjHit = () => {
+    const s = this.state;
+    const deck = s.bjDeck.slice(); const card = deck.pop();
+    const player = [...s.bjPlayer, card];
+    if (bjValue(player) > 21) { this.setState({ bjPlayer: player, bjDeck: deck }); this.bjResolve(player, s.bjDealer, false); }
+    else this.setState({ bjPlayer: player, bjDeck: deck });
+  };
+  bjStand = () => { this.setState({ bjDealerHidden: false }); this.bjDealerPlay(); };
+  bjDealerPlay = () => {
+    const s = this.state;
+    let dealer = s.bjDealer.slice(), deck = s.bjDeck.slice();
+    while (bjValue(dealer) < 17) dealer.push(deck.pop());
+    this.setState({ bjDealer: dealer, bjDeck: deck, bjDealerHidden: false });
+    this.bjResolve(s.bjPlayer, dealer, false);
+  };
+  bjResolve = (player, dealer, isBlackjack) => {
+    const pv = bjValue(player), dv = bjValue(dealer);
+    let message, color, payout = 0;
+    if (pv > 21) { message = 'Tu as sauté — perdu.'; color = 'var(--color-neutral-600)'; }
+    else if (isBlackjack) { message = 'Blackjack ! Gain ×2,5.'; color = 'var(--color-accent)'; payout = this.state.bjBet * 2.5; }
+    else if (dv > 21 || pv > dv) { message = 'Tu gagnes cette main !'; color = 'var(--color-accent)'; payout = this.state.bjBet * 2; }
+    else if (pv === dv) { message = 'Égalité — mise remboursée.'; color = 'var(--color-neutral-400)'; payout = this.state.bjBet; }
+    else { message = 'Le croupier gagne.'; color = 'var(--color-neutral-600)'; }
+    const chips = this.state.chips + payout;
+    this.setState({ bjPhase: 'done', bjMessage: message, bjMessageColor: color, bjDealerHidden: false, chips });
+    this.persist(chips);
+  };
+  bjNewRound = () => this.setState({ bjPhase: 'betting', bjPlayer: [], bjDealer: [], bjMessage: '' });
+
+  setPkBet = (e) => this.setState({ pkBet: Math.max(10, parseInt(e.target.value, 10) || 10) });
+  pkDeal = () => {
+    const s = this.state;
+    if (s.chips < s.pkBet) { this.setState({ pkResult: 'Solde insuffisant.', pkResultMult: 0 }); return; }
+    const deck = shuffle(freshDeck());
+    const hand = [deck.pop(), deck.pop(), deck.pop(), deck.pop(), deck.pop()];
+    const chips = s.chips - s.pkBet;
+    this.setState({ pkDeck: deck, pkHand: hand, pkHeld: [false, false, false, false, false], pkPhase: 'draw', pkResult: '', chips });
+    this.persist(chips);
+  };
+  pkToggleHold = (i) => {
+    if (this.state.pkPhase !== 'draw') return;
+    const held = this.state.pkHeld.slice(); held[i] = !held[i];
+    this.setState({ pkHeld: held });
+  };
+  pkDraw = () => {
+    const s = this.state;
+    const deck = s.pkDeck.slice();
+    const hand = s.pkHand.map((c, i) => s.pkHeld[i] ? c : deck.pop());
+    const { label, mult } = evaluatePoker(hand);
+    const payout = s.pkBet * mult;
+    const chips = s.chips + payout;
+    this.setState({ pkHand: hand, pkDeck: deck, pkPhase: 'done', pkResult: mult > 0 ? `${label} — gain ×${mult}` : label, pkResultMult: mult, chips });
+    this.persist(chips);
+  };
+  pkNewRound = () => this.setState({ pkPhase: 'betting', pkResult: '' });
+
+  renderVals() {
+    const s = this.state;
+    const mkCard = (c, faceUp, held) => ({
+      rank: faceUp === false ? '' : c.rank, suit: faceUp === false ? '' : c.suit,
+      color: c.red ? RED : 'var(--color-text)', faceUp: faceUp !== false,
+      className: 'cg-card' + (faceUp === false ? ' cg-back' : '') + (held ? ' cg-held' : ''),
+    });
+    const bjDealerCards = s.bjDealer.map((c, i) => mkCard(c, !(i === 1 && s.bjDealerHidden)));
+    const bjPlayerCards = s.bjPlayer.map(c => mkCard(c, true));
+    const pkCards = s.pkHand.map((c, i) => ({ ...mkCard(c, true, s.pkHeld[i]), onClick: () => this.pkToggleHold(i) }));
+    return {
+      chipsLabel: Math.round(s.chips).toLocaleString('fr-FR') + ' jetons',
+      onRechargeClick: this.onRechargeClick,
+      isBlackjackTab: s.tab === 'blackjack', isPokerTab: s.tab === 'poker',
+      selectBlackjack: this.selectBlackjack, selectPoker: this.selectPoker,
+      bjDealerCards, bjPlayerCards,
+      bjDealerLabel: s.bjDealer.length ? `(${s.bjDealerHidden ? '?' : bjValue(s.bjDealer)})` : '',
+      bjPlayerLabel: s.bjPlayer.length ? `(${bjValue(s.bjPlayer)})` : '',
+      bjMessage: s.bjMessage, bjMessageColor: s.bjMessageColor,
+      bjIsBetting: s.bjPhase === 'betting', bjIsPlaying: s.bjPhase === 'playing', bjIsDone: s.bjPhase === 'done',
+      bjBet: s.bjBet, setBjBet: this.setBjBet, bjDeal: this.bjDeal, bjHit: this.bjHit, bjStand: this.bjStand, bjNewRound: this.bjNewRound,
+      pkCards, pkResultLabel: s.pkResult, pkResultColor: s.pkResultMult > 0 ? 'var(--color-accent)' : 'var(--color-neutral-600)',
+      pkIsBetting: s.pkPhase === 'betting', pkIsDraw: s.pkPhase === 'draw', pkIsDone: s.pkPhase === 'done',
+      pkBet: s.pkBet, setPkBet: this.setPkBet, pkDeal: this.pkDeal, pkDraw: this.pkDraw, pkNewRound: this.pkNewRound,
+    };
+  }
+}
+
+</script>
+</body>
+</html>

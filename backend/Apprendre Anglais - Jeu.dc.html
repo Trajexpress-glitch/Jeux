@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+<link rel="icon" href="./favicon.png">
+<template id="__bundler_thumbnail"><svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200"><rect width="200" height="200" fill="#232532"/><circle cx="100" cy="85" r="42" fill="none" stroke="#9184d9" stroke-width="6"/><text x="100" y="95" font-family="Inter,sans-serif" font-size="34" fill="#e9e9ed" text-anchor="middle">EN</text><text x="100" y="155" font-family="Inter,sans-serif" font-size="16" fill="#9184d9" text-anchor="middle">Daily English</text></svg></template>
+</head>
+<body>
+<x-dc>
+
+<helmet data-dc-atomics>
+<link rel="stylesheet" href="./styles.css">
+<style>
+body{margin:0;background:var(--color-bg)}
+@keyframes popin{from{transform:scale(.9);opacity:0}to{transform:scale(1);opacity:1}}
+.dl-app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--color-bg);color:var(--color-text);font-family:'Inter',system-ui,sans-serif;display:flex;flex-direction:column}
+.dl-opt{width:100%;text-align:left;padding:14px 16px;border-radius:var(--radius-md);border:1px solid var(--color-divider);background:var(--color-surface);color:var(--color-text);font-size:15px;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s}
+.dl-opt:hover{border-color:color-mix(in srgb, var(--color-text) 40%, transparent)}
+.dl-opt.dl-selected{border-color:var(--color-accent);box-shadow:inset 0 0 0 1px var(--color-accent)}
+.dl-opt.dl-correct{border-color:var(--color-accent);background:color-mix(in srgb, var(--color-accent) 18%, var(--color-surface))}
+.dl-opt.dl-wrong{border-color:color-mix(in srgb, var(--color-text) 40%, transparent);opacity:.55}
+.dl-ring{width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex:none}
+.dl-plan{border:1px solid var(--color-divider);border-radius:var(--radius-lg);padding:18px;display:flex;flex-direction:column;gap:8px;background:var(--color-surface)}
+.dl-plan.dl-plan-hi{border-color:var(--color-accent)}
+</style>
+</helmet>
+
+<div class="dl-app">
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:20px 22px 14px">
+<div>
+<h5 style="margin:0;color:var(--color-accent)">DAILY ENGLISH</h5>
+<div style="font-size:13px;opacity:.7">15 minutes par jour</div>
+</div>
+<div style="display:flex;gap:8px">
+<span class="tag tag-outline">🔥 {{ streak }} j</span>
+<span class="tag tag-accent">{{ xp }} XP</span>
+</div>
+</div>
+
+<sc-if value="{{ isHome }}" hint-placeholder-val="{{ true }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:20px;flex:1">
+
+<div class="card elev-sm" style="flex-direction:row;align-items:center;gap:18px;padding:20px">
+<div class="dl-ring" style="background:{{ ringBg }}">
+<div style="width:56px;height:56px;border-radius:50%;background:var(--color-bg);display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:500">{{ streak }}/7</div>
+</div>
+<div style="flex:1">
+<div class="card-title">Objectif hebdo</div>
+<div class="card-body">{{ streak }} jour(s) sur 7 — continue ta série !</div>
+</div>
+</div>
+
+<div class="card elev-md" style="padding:22px;gap:14px">
+<span class="card-kicker">Leçon du jour</span>
+<h3 style="margin:0">{{ todayTopic }}</h3>
+<p class="card-body" style="opacity:.75">5 questions · vocabulaire &amp; grammaire · ~3 min</p>
+<button class="btn btn-primary btn-block" onclick="{{ startLesson }}" style="height:48px;font-size:15px">Commencer la leçon</button>
+</div>
+
+<div style="display:flex;gap:12px">
+<div class="card" style="flex:1;align-items:center;text-align:center;box-shadow:var(--shadow-sm)">
+<span class="card-kicker">Leçons</span>
+<div style="font-size:22px;font-weight:500">{{ lessonsCompleted }}</div>
+</div>
+<div class="card" style="flex:1;align-items:center;text-align:center;box-shadow:var(--shadow-sm)">
+<span class="card-kicker">Précision</span>
+<div style="font-size:22px;font-weight:500">{{ accuracyLabel }}</div>
+</div>
+</div>
+
+<sc-if value="{{ showPremiumBanner }}" hint-placeholder-val="{{ false }}">
+<div class="card elev-sm" style="flex-direction:row;align-items:center;gap:14px;border:1px solid var(--color-accent)">
+<div style="flex:1">
+<div class="card-title" style="color:var(--color-accent-300)">Passe Premium</div>
+<div class="card-body">Leçons illimitées, certificat officiel, cours de finance &amp; conversation.</div>
+</div>
+<button class="btn btn-secondary" onclick="{{ openPaywall }}">Voir</button>
+</div>
+</sc-if>
+
+</div>
+</sc-if>
+
+<sc-if value="{{ isLesson }}" hint-placeholder-val="{{ false }}">
+<div style="padding:8px 22px 40px;display:flex;flex-direction:column;gap:18px;flex:1">
+<div style="display:flex;align-items:center;gap:10px">
+<div style="flex:1;height:6px;border-radius:3px;background:var(--color-neutral-800);overflow:hidden">
+<div style="height:100%;background:var(--color-accent);width:{{ progressPct }}%;transition:width .3s"></div>
+</div>
+<span style="font-size:12px;opacity:.7">{{ qPosLabel }}</span>
+</div>
+
+<span class="tag tag-accent-2" style="align-self:flex-start">{{ currentQuestion.category }}</span>
+<h3 style="margin:0;line-height:1.3">{{ currentQuestion.prompt }}</h3>
+
+<div style="display:flex;flex-direction:column;gap:10px">
+<sc-for list="{{ optionRows }}" as="opt" hint-placeholder-count="4">
+<button class="{{ opt.className }}" onclick="{{ opt.onClick }}">{{ opt.label }}</button>
+</sc-for>
+</div>
+
+<sc-if value="{{ locked }}" hint-placeholder-val="{{ false }}">
+<div class="card" style="box-shadow:var(--shadow-sm);border:1px solid {{ feedbackColor }}">
+<div class="card-body" style="color:var(--color-text)">{{ feedbackText }}</div>
+</div>
+<button class="btn btn-primary btn-block" onclick="{{ nextQuestion }}" style="height:48px">{{ nextLabel }}</button>
+</sc-if>
+</div>
+</sc-if>
+
+<sc-if value="{{ isResult }}" hint-placeholder-val="{{ false }}">
+<div style="padding:40px 22px;display:flex;flex-direction:column;gap:18px;flex:1;align-items:center;text-align:center;justify-content:center">
+<span class="tag tag-accent">Leçon terminée</span>
+<h2 style="margin:6px 0 0">{{ score }} / {{ totalQuestions }} correctes</h2>
+<p style="opacity:.75;margin:0">+{{ xpGained }} XP · série de {{ streak }} jour(s)</p>
+<button class="btn btn-primary" onclick="{{ goHome }}" style="padding:12px 28px">Retour à l'accueil</button>
+</div>
+</sc-if>
+
+<sc-if value="{{ isPaywall }}" hint-placeholder-val="{{ false }}">
+<div style="padding:30px 22px 40px;display:flex;flex-direction:column;gap:16px;flex:1">
+<h2 style="margin:0">Débloque Premium</h2>
+<p style="opacity:.75;margin:0">Leçons illimitées, certificat officiel reconnu, coaching et cours supplémentaires (finance, conversation).</p>
+
+<div class="dl-plan dl-plan-hi">
+<span class="card-kicker">Le plus populaire</span>
+<div class="card-title">Abonnement mensuel — 5 $CA/mois</div>
+<div class="card-body" style="opacity:.8">Accès illimité à toutes les leçons et langues</div>
+<a class="btn btn-primary btn-block" href="https://buy.stripe.com/aFa5kEchn3GBbASbnN3sI01" target="_blank" onclick="{{ onSubscribeClick }}">Choisir ce plan</a>
+</div>
+
+<div class="dl-plan">
+<span class="card-kicker">Ponctuel</span>
+<div class="card-title">Certificat de niveau — 1 $CA</div>
+<div class="card-body" style="opacity:.8">Passe un test et obtiens un certificat partageable</div>
+<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/6oUfZiftz4KF34m77x3sI00" target="_blank" onclick="{{ onCertificateClick }}">Passer le test</a>
+</div>
+
+<div class="dl-plan">
+<span class="card-kicker">À la carte</span>
+<div class="card-title">Cours supplémentaires</div>
+<div class="card-body" style="opacity:.8">Finance personnelle, comptabilité, culture générale</div>
+<a class="btn btn-secondary btn-block" href="https://buy.stripe.com/28E14o4OVa4ZgVc63t3sI03" target="_blank" onclick="{{ onCoursesClick }}">Explorer</a>
+</div>
+
+<button class="btn btn-ghost" onclick="{{ closePaywall }}" style="align-self:center;margin-top:6px">Continuer gratuitement</button>
+</div>
+</sc-if>
+
+</div>
+
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+
+const QUESTIONS = [
+  {category:'Vocabulaire', prompt:'Comment dit-on "voyage d\'affaires" en anglais ?', options:['business trip','holiday journey','work vacation','office tour'], correct:0},
+  {category:'Grammaire', prompt:'Choisis la bonne forme : "She ___ to the gym every morning."', options:['go','goes','going','gone'], correct:1},
+  {category:'Vocabulaire', prompt:'"Deadline" signifie :', options:['Une pause déjeuner','Une date limite','Un collègue','Un salaire'], correct:1},
+  {category:'Grammaire', prompt:'Complète : "I have ___ finished my report."', options:['already','yesterday','ago','last week'], correct:0},
+  {category:'Vocabulaire', prompt:'"To negotiate" veut dire :', options:['Ignorer','Négocier','Licencier','Voyager'], correct:1},
+  {category:'Grammaire', prompt:'Quelle phrase est correcte ?', options:['He don\'t like coffee','He doesn\'t likes coffee','He doesn\'t like coffee','He not like coffee'], correct:2},
+  {category:'Vocabulaire', prompt:'"Invoice" se traduit par :', options:['Devis','Facture','Contrat','Budget'], correct:1},
+  {category:'Conversation', prompt:'Réponse polie à "How are you?" :', options:['I am 30 years old','I\'m doing well, thanks!','Yes, please','No problem'], correct:1},
+  {category:'Grammaire', prompt:'"They ___ working on the project since Monday."', options:['are','have been','was','is'], correct:1},
+  {category:'Vocabulaire', prompt:'"Shareholder" désigne :', options:['Un employé','Un actionnaire','Un client','Un fournisseur'], correct:1},
+];
+const TOPICS = ['Anglais des affaires', 'Conversation quotidienne', 'Grammaire essentielle', 'Vocabulaire du bureau'];
+const STORAGE_KEY = 'daily-english-progress-v1';
+const SUB_URL = 'https://buy.stripe.com/aFa5kEchn3GBbASbnN3sI01';
+const CERT_URL = 'https://buy.stripe.com/6oUfZiftz4KF34m77x3sI00';
+const COURSES_URL = 'https://buy.stripe.com/28E14o4OVa4ZgVc63t3sI03';
+
+class Component extends DCLogic {
+  state = { screen:'home', qIndex:0, score:0, selected:null, locked:false, lessonSet:[], streak:1, xp:0, lessonsCompleted:0, correctTotal:0, answeredTotal:0, isPremium:false, cardNumber:'', cardExpiry:'', cardCvc:'', cardName:'', isProcessing:false };
+
+  componentDidMount() {
+    try {
+      const saved = JSON.parse(localStorage.getItem(STORAGE_KEY) || '{}');
+      this.setState({
+        streak: saved.streak ?? 1, xp: saved.xp ?? 0,
+        lessonsCompleted: saved.lessonsCompleted ?? 0,
+        correctTotal: saved.correctTotal ?? 0, answeredTotal: saved.answeredTotal ?? 0,
+        isPremium: saved.isPremium ?? false,
+      });
+    } catch (e) {}
+  }
+
+  persist(extra) {
+    const s = this.state;
+    const data = { streak: s.streak, xp: s.xp, lessonsCompleted: s.lessonsCompleted, correctTotal: s.correctTotal, answeredTotal: s.answeredTotal, isPremium: s.isPremium, ...extra };
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  }
+
+  shuffle(arr) {
+    const a = arr.slice();
+    for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; }
+    return a;
+  }
+
+  startLesson = () => {
+    if (!this.state.isPremium && this.state.lessonsCompleted >= 3) { this.setState({ screen: 'paywall' }); return; }
+    const lessonSet = this.shuffle(QUESTIONS).slice(0, 5);
+    this.setState({ screen: 'lesson', lessonSet, qIndex: 0, score: 0, selected: null, locked: false });
+  };
+
+  selectAnswer = (i) => {
+    if (this.state.locked) return;
+    const q = this.state.lessonSet[this.state.qIndex];
+    const correct = i === q.correct;
+    this.setState((s) => ({ selected: i, locked: true, score: correct ? s.score + 1 : s.score, answeredTotal: s.answeredTotal + 1, correctTotal: s.correctTotal + (correct ? 1 : 0) }));
+  };
+
+  nextQuestion = () => {
+    const s = this.state;
+    if (s.qIndex + 1 < s.lessonSet.length) {
+      this.setState({ qIndex: s.qIndex + 1, selected: null, locked: false });
+    } else {
+      const xpGained = s.score * 10;
+      this.setState((s2) => {
+        const next = { streak: s2.streak + 1, xp: s2.xp + xpGained, lessonsCompleted: s2.lessonsCompleted + 1 };
+        this.persist(next);
+        return { ...next, screen: 'result' };
+      });
+    }
+  };
+
+  goHome = () => this.setState({ screen: 'home' });
+  openPaywall = () => this.setState({ screen: 'paywall' });
+  closePaywall = () => this.setState({ screen: 'home' });
+
+  guardedOpen = (e, url) => {
+    if (localStorage.getItem('kyc_verified') !== '1') {
+      e.preventDefault();
+      window.location.href = './authentification-kyc.html?verify=1&return=' + encodeURIComponent(url);
+    }
+  };
+  onSubscribeClick = (e) => { this.guardedOpen(e, SUB_URL); if (localStorage.getItem('kyc_verified') === '1') { this.setState({ isPremium: true }); this.persist({ isPremium: true }); } };
+  onCertificateClick = (e) => this.guardedOpen(e, CERT_URL);
+  onCoursesClick = (e) => this.guardedOpen(e, COURSES_URL);
+
+  renderVals() {
+    const s = this.state;
+    const q = s.lessonSet[s.qIndex];
+    const total = s.lessonSet.length || 5;
+    const accuracy = s.answeredTotal > 0 ? Math.round((s.correctTotal / s.answeredTotal) * 100) : 100;
+    const optionRows = q ? q.options.map((label, i) => {
+      let className = 'dl-opt';
+      if (s.locked) {
+        if (i === q.correct) className += ' dl-correct';
+        else if (i === s.selected) className += ' dl-wrong';
+        else className += ' dl-wrong';
+      } else if (i === s.selected) className += ' dl-selected';
+      return { label, className, onClick: () => this.selectAnswer(i) };
+    }) : [];
+    return {
+      isHome: s.screen === 'home', isLesson: s.screen === 'lesson', isResult: s.screen === 'result', isPaywall: s.screen === 'paywall',
+      streak: s.streak, xp: s.xp, lessonsCompleted: s.lessonsCompleted, accuracyLabel: accuracy + '%',
+      ringBg: `conic-gradient(var(--color-accent) ${Math.min(s.streak,7)/7*360}deg, var(--color-neutral-800) 0deg)`,
+      todayTopic: TOPICS[s.lessonsCompleted % TOPICS.length],
+      showPremiumBanner: !s.isPremium,
+      currentQuestion: q || { category: '', prompt: '' },
+      optionRows, locked: s.locked,
+      progressPct: q ? Math.round(((s.qIndex) / total) * 100) : 0,
+      qPosLabel: `${s.qIndex + 1}/${total}`,
+      feedbackColor: q && s.selected === q.correct ? 'var(--color-accent)' : 'var(--color-neutral-600)',
+      feedbackText: q ? (s.selected === q.correct ? 'Bonne réponse !' : `Pas tout à fait — réponse : "${q.options[q.correct]}"`) : '',
+      nextLabel: s.qIndex + 1 < total ? 'Question suivante' : 'Voir mes résultats',
+      score: s.score, totalQuestions: total, xpGained: s.score * 10,
+      startLesson: this.startLesson, nextQuestion: this.nextQuestion, goHome: this.goHome,
+      openPaywall: this.openPaywall, closePaywall: this.closePaywall,
+      onSubscribeClick: this.onSubscribeClick, onCertificateClick: this.onCertificateClick, onCoursesClick: this.onCoursesClick,
+    };
+  }
+}
+
+</script>
+</body>
+</html>
